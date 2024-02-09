@@ -11,8 +11,9 @@ vim.keymap.set('n', '<leader>u', vim.cmd.UndotreeToggle)
 -- Define a function to execute the build process
 function build_and_compile()
     vim.cmd('wa') -- Save all open buffers
+    vim.cmd('!mkdir -p build') -- Create the "build" directory
     vim.cmd('lcd build') -- Change directory to "build"
-    vim.cmd('!cmake -DCMAKE_BUILD_TYPE=debug -DCMAKE_EXPORT_COMPILE_COMMANDS=1 .. ') -- Run CMake and build
+    vim.cmd('!cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=1 .. ') -- Run CMake and build
     vim.cmd('compiler gcc') -- Set the compiler to "gcc"
     vim.cmd('make -j8') -- Start compilation
     vim.cmd('lcd ..') -- Start compilation
