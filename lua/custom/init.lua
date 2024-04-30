@@ -11,16 +11,52 @@ vim.keymap.set('n', '<leader>u', vim.cmd.UndotreeToggle)
 -- Define a function to execute the build process
 function build_and_compile()
     vim.cmd('wa') -- Save all open buffers
+    local original_dir = vim.fn.getcwd()
+    local handle = io.popen("find . -type d -name build | head -n 1")
+    local build_dir = handle:read("*a")
+    handle:close()
+    build_dir = string.gsub(build_dir, "\n", "") -- Remove newline character from output
+
     vim.cmd('!mkdir -p build') -- Create the "build" directory
-    vim.cmd('lcd build') -- Change directory to "build"
+    vim.cmd('lcd ' .. build_dir)
+
     vim.cmd('!cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=1 .. ') -- Run CMake and build
-    vim.cmd('compiler gcc') -- Set the compiler to "gcc"
-    vim.cmd('make -j8') -- Start compilation
-    vim.cmd('lcd ..') -- Start compilation
+    vim.cmd('lcd ' .. original_dir)
+end
+
+
+function build_and_compile_without_configure()
+    vim.cmd('wa') -- Save all open buffers
+    local original_dir = vim.fn.getcwd()
+    local handle = io.popen("find . -type d -name build | head -n 1")
+    local build_dir = handle:read("*a")
+    handle:close()
+    build_dir = string.gsub(build_dir, "\n", "") -- Remove newline character from output
+
+    -- Change directory to the found build directory if it exists
+    if build_dir ~= "" then
+        vim.cmd('lcd ' .. build_dir)
+    else
+        print("No 'build' directory found, please create one or check your project structure.")
+        return
+    end
+
+    -- vim.cmd('compiler gcc') -- Set the compiler to "gcc"
+    -- vim.cmd('make -j8') -- Start compilation
+    local command = 'make -j8 2>&1 | sed \'s/\\x1b\\[[0-9;]*[mKG]//g\''
+    local output = vim.fn.system(command)
+
+    -- Load the output into quickfix window
+    vim.fn.setqflist({}, ' ', {title = 'Compilation', lines = vim.split(output, '\n')})
+    -- Return to the original directory
+    vim.cmd('lcd ' .. original_dir)
+
+    vim.cmd('copen')
 end
 
 -- Create a key mapping for F5 to call the build_and_compile function
-vim.api.nvim_set_keymap('n', '<F5>', ':lua build_and_compile()<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<F4>', ':lua build_and_compile()<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<F5>', ':lua build_and_compile_without_configure()<CR>', { noremap = true, silent = true })
 
 --require('leap').add_default_mappings()
 
