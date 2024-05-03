@@ -8,6 +8,29 @@ vim.api.nvim_set_keymap('n', '<leader>o', ':ClangdSwitchSourceHeader<CR>', { nor
 
 vim.keymap.set('n', '<leader>u', vim.cmd.UndotreeToggle)
 
+-- Function to toggle the quickfix list
+function close_quickfix_if_open()
+    -- Check if the quickfix window is open
+    local windows = vim.fn.getwininfo()
+    local quickfix_open = false
+    for _, win in pairs(windows) do
+        if win.quickfix == 1 then
+            quickfix_open = true
+            break
+        end
+    end
+
+    -- Toggle the quickfix list based on its current state
+    if quickfix_open then
+        vim.cmd('cclose')  -- Close the quickfix list
+        return true
+    end
+   return false
+end
+
+-- Map F5 to toggle the quickfix list
+vim.api.nvim_set_keymap('n', '<F5>', '<cmd>lua ToggleQuickfix()<CR>', { noremap = true, silent = true })
+
 -- Define a function to execute the build process
 function build_and_compile()
     vim.cmd('wa') -- Save all open buffers
@@ -26,6 +49,9 @@ end
 
 
 function build_and_compile_without_configure()
+    if close_quickfix_if_open() then
+      return
+    end
     vim.cmd('wa') -- Save all open buffers
     local original_dir = vim.fn.getcwd()
     local handle = io.popen("find . -type d -name build | head -n 1")
